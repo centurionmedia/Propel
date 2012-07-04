@@ -28,6 +28,7 @@ class ConcreteInheritanceBehavior extends Behavior
 		'extends'             => '',
 		'descendant_column'   => 'descendant_class',
 		'copy_data_to_parent' => 'true',
+        'copy_data_to_child' => 'true',
 		'schema'              => ''
 	);
 
@@ -42,6 +43,7 @@ class ConcreteInheritanceBehavior extends Behavior
 				$parentBehavior = new ConcreteInheritanceParentBehavior();
 				$parentBehavior->setName('concrete_inheritance_parent');
 				$parentBehavior->addParameter(array('name' => 'descendant_column', 'value' => $this->getParameter('descendant_column')));
+                $parentBehavior->addParameter(array('name' => 'copy_data_to_child', 'value' => $this->getParameter('copy_data_to_child')));
 				$parentTable->addBehavior($parentBehavior);
 				// The parent table's behavior modifyTable() must be executed before this one
 				$parentBehavior->getTableModifier()->modifyTable();

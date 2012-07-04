@@ -21,7 +21,8 @@ class ConcreteInheritanceParentBehavior extends Behavior
 {
 	// default parameters value
 	protected $parameters = array(
-		'descendant_column' => 'descendant_class'
+		'descendant_column' => 'descendant_class',
+        'copy_data_to_child' => 'true'
 	);
 
 	public function modifyTable()
@@ -47,9 +48,28 @@ class ConcreteInheritanceParentBehavior extends Behavior
 		$script = '';
 		$this->addHasChildObject($script);
 		$this->addGetChildObject($script);
+        $this->addObjectGetSyncChild($script);
 
 		return $script;
 	}
+    
+    protected function isCopyData()
+    {
+        return $this->getParameter('copy_data_to_child') == 'true';
+    }
+
+    public function preSave($script)
+    {
+        
+        if ($this->isCopyData()) {
+            return "if (\$this->isModified() && \$this->hasChildObject() && !\$this->getChildObject()->isModified())
+{
+    \$child = \$this->getSyncChild(\$con);
+    \$child->save(\$con);
+}
+";
+        }
+    }
 
 	protected function addHasChildObject(&$script)
 	{
@@ -85,5 +105,33 @@ public function getChildObject()
 }
 ";
 	}
+    
+    protected function addObjectGetSyncChild(&$script)
+    {
+        $table = $this->getTable();
+        $pkeys = $table->getPrimaryKey();
+        $cptype = $pkeys[0]->getPhpType();
+        $script .= "
+/**
+ * Update the child object
+ *
+ * @return    mixed        The child object
+ */
+public function getSyncChild(\$con = null)
+{
+    \$child = \$this->getChildObject();";
+        foreach ($table->getColumns() as $column) {
+            if ($column->isPrimaryKey() || $column->getName() == $this->getParameter('descendant_column')) {
+                continue;
+            }
+            $phpName = $column->getPhpName();
+            $script .= "
+    \$child->set{$phpName}(\$this->get{$phpName}());";
+        }
+        $script .= "
+    return \$child;
+}
+";
+    }
 
 }
