@@ -1,5 +1,174 @@
 # Changelog Of The Propel 1.6 Branch #
 
+## 2012-07-02: Version 1.6.6 ##
+
+17edd0f Prepare 1.6.6 release
+f15d36d Added defaultValue support for type ARRAY
+3fc74cc Added tests for setIgnoreCase() method
+b03569a Fixed package path if no parent package found
+ec4ea3d [NestedSet] Fixed CS
+b100492 Fixed small memory leak. Closes #358
+efb2b4a Added limit to phing version. It's now >= 2.4.12, but just for 2.4.* versions.
+1f74be0 Better composer constraint, fixes #387
+da1e6ce Fixed bin scripts
+b41b746 Cosmetic changes
+62fd2bf fix regressions introduced in 841d477db7
+841d477 add @throws and @return where missing
+94aae82 fix several generated phpDoc, missing declarations
+66f9eda Fixed CS for sluggable behavior
+e76f854 add sluggable scope schema
+a0e7463 add test for sluggable with scope and alter make unique in behavior to include scope
+ec0a762 added support for scope_column
+3b34b07 add test for sluggable with scope and alter make unique in behavior to include scope
+dd1ce76 tweak for proper php format
+f32733f added support for scope_column
+a051a60 Fixed CS
+ca773b3 fix several phpDoc and type hints
+0661d18 fix #378 change  for self::PEER
+70e572b add enforceVersioning
+3b15493 Fixed propel-gen script
+3849529 [Timestampable] Maded 'updated_at' column optional using a parameter. Fixes #370
+ee711c7 Added bin-info in the composer Added bin-feature as described on http://getcomposer.org/doc/articles/vendor-bins.md
+88b8b48 fix remove one-to-many, add test for one-to-mmany
+a5d3096 fix rebase code duplication
+a1f26b5 fix setter one-to-many schedule for deletion, fix remove many-to-many
+b1f993a fix CS
+d57ae1e fix-m2m-schedule-for-deletion
+f511569 [Runtime] Avoided possibility issue
+e074ecf [Runtime] Avoided BC break
+f9ae6da [Runtime] Fixed PropelObjectFormatter for 1-N relations thanks to @fabeat
+d636134 [Versionable] Added missing use statement
+1c5c378 Fixed bad indentation
+56025fa [Timestampable] Disabled update_at column if versionable is used on the same table. Closes #362
+afad075 Fixed CS according to PSR-1, and PSR-2
+afd35b4 [test] [generator] fixed test suite for XmlToAppData class.
+1b3389c [test] [generator] fixed test suite according to last changes in previous commit.
+ddde376 [generator] fixed the skipSql attribute value when exported to XML.
+2710aa6 Fixed composer autoloading
+9016436 [Archivable] Fixed file format (unix instead of dos), fixed issue with namespaces
+8b9449a fix: Illegal offset type in /propel/runtime/lib/collection/PropelObjectCollection.php line 222
+84d4c66 fix a wrong var name  => , close #350
+4f637d8 Adjusted last commit
+c614915 Fix some typo (thanks to havvg and willdurand)
+76e5eca Fixed ARRAY columns in hydrate() method
+4db2d79 Add a little set of features in the README.md
+c0af4bd Added new schema for setPk tests
+da9bad3 line back.
+5615f71 unit tests for pre-defined key type
+f209122 new method `getDefaultKeyType` for PHP5ObjectBuilder provided. checks if `defaultKeyType` parameter provided. if not returns `TYPE_PHPNAME` by default. unit test for `getDefaultKeyType`
+359cd80 added default key type for object builder. could be re-defined in project configuration. default key name is 'phpName'
+f747823 Fixed Table::setInterface(), Table::getInterface() usages
+1fd5b18 Added test to prove #318
+108a0b7 added cross ref table to schema and code to BookstoreTest to test patched cross ref setter
+2097c08 Updates to PropelMigrationTask to better handle multiple datasources.
+84b49eb patched addCrossFKSet: use cross FK related name and check if object in current collection
+c3e9bbd Added test to prove #321
+e388798 Fixed SimpleArrayFormatter. Closes #338
+d15c389 Fixed problem when pk already exists on parent table
+3d68575 [Generator] Added more methods to the GeneratorConfigInterface, allowed to load behaviors from a QuickGeneratorConfig instance
+db47b84 Fixed setting PK on child objects of concrete-inheritance
+d6506a5 Fixed propel-gen
+bfa9f14 [Runtime] [ModelCriteria] Allowed insensitive case for column names
+94d8c3f [Generator/Tests] Updated paths
+ee23c82 [composer] Used phing/phing 2.4.12
+678676a Add: support for EXPLAIN queries in postgres
+8280f6e Fixed license, added a README
+21bdf18 [Tests] Fixed db settings
+64a5f40 Added bootstrap.php file for phpunit
+58c4861 Fixed travis-ci setup
+44b6d26 [Tests] [Fixtures] Fixed default database settings
+2b0d0a9 Updated gitignore
+8927b97 Added travis-ci file
+39d0a88 Added a way to autoload Phing classes using composer
+ee007fa Added branch alias to composer.json
+21ceeeb Updated the composer.json file
+60b4c05 create version when deleting many-to-many refs
+22fec05 cs corrections
+eac4262 fix #320 reverse engineering : select tablename can returns quoted name on mssql
+
+## 2012-03-27: Version 1.6.5 ##
+
+cd69910 Preparing the 1.6.5 release
+7b799e3 Fixed composer autoloading based on @grEvenX work
+46c3f86 Merge pull request #317 from fzaninotto/fix_model_pager
+14b9ac1 Merge pull request #319 from K-Phoen/feature-versionable-utility-methods
+45e5c3e Merge pull request #315 from ddalmais/feat-explain-plan
+4e72771 Merge pull request #324 from K-Phoen/fix-versioning-inheritance
+9f80f8b Fix: versioning tables with inheritance
+7769218 Add: some usefull methods to Versionable objects
+45f2924 Fix PropelModelPager::getLastPage() return type.
+4cb3e5e Fix CS
+4c8d9ac Use assertArrayHasKey instead of assertTrue
+2e74a91 Fix indentation and useless blank line
+aeeb66d Fix text formatting
+929080d Add unit test on explain plan compute from text query
+0469a2c Format DBMysql code
+460b90f Make ExplainPlanTest independent from Adapter
+377baf9 Add unit test on getExplainPlanQuery
+2420c3e Add DBOracle doExplainPlan function
+d54388a Remove forced database read connection Oracle must write explain plan in PLAN_TABLE
+e4c3de1 Fix phpdoc function title
+f62cba4 Enable to get the connection name in log
+a8c55fd Enable doExplainPlan to take a binded query
+00bcc96 Fix text in ExplainPlanTest
+2f6a4fa Add explain plan unit test on mysql bookstore
+9f16429 Add explain function use adapter specific doExplainPlan function
+f0c8673 Add specific Mysql doExplainPlan function
+03dda95 Add doExplainPlan on DBAdapter Return PropelException Used to return Exception in adapter without override of doExplainPlan function
+b7669e3 Merge pull request #314 from K-Phoen/fix-is-versionning-necessary-fk
+eb303e5 Fix: some isVersionningNecessary() calls can cause fatal errors
+356947a Merge pull request #310 from akalyaev/master
+38738e6 fixed code style (Refs #309)
+3231a76 Fixed propel-gen. Closes #180
+8168f9d Added phpunit.xml.dist file
+769dbf9 fixed ArchivableBehavior archived_at (Refs #309)
+45f418b Marked PGSQL test skipped
+43e4ae7 Fixed reset_tests.sh script
+865511a [gh-152] Revert change that was made to postgres schema parsing that causes regressions and has no tests. Add tests for my case. I do not understand the case that the person who introduced the bug was trying to solve.
+5ebefc3 Fix #282 versionable behavior FK in generated object classes Fix #282 by replacing foreign key references with PrimaryKey
+14a1702 Merge pull request #298 from Langwhich/master
+841448e Fix MySQL quote issue for table options. Closes #301
+2923a3b Merge pull request #291 from fzaninotto/remove_class_default
+ea41817 Remove remaining BasePeer::CLASS_DEFAULT constant.
+9d0251f Merge pull request #297 from vworldat/patch-1
+82894e7 Merge pull request #299 from havvg/master
+292fc7a add test for multiple HAVING conditions
+41f605a Fixes SQL diff command when there is a custom migration table name defined
+f0ac2e9 `<parameter />` tags inside behaviors are optional. The current schema fails when including a behavior like `<behavior name="auto_add_pk" />`.
+0eacc54 Merge pull request #295 from fzaninotto/versionable_namespace
+1f46f36 Add missing namespace declarations in versionable behavior.
+3d5dc3c Merge pull request #287 from fzaninotto/findoneorcreate_exception
+f033016 Merge pull request #288 from fzaninotto/select_paginate
+f2d1cce Merge pull request #289 from fzaninotto/archivable_namespace
+e9051d4 Merge pull request #290 from fzaninotto/diff_with_migrations
+e0c16e2 Remove BasePeer::CLASS_DEFAULT constant.
+0b34a67 Update diff task to fail when uncommitted migrations are found.
+34bd8d6 Add missing namespace declaration in archivable behavior.
+f216a1a Add unit tests for paginate() used together with select()
+891e332 Update the exception thrown by findOneOrCreate() when used with a join.
+209e34d Merge pull request #279 from grandbora/fixSelectWithPeerConstant
+2f9c987 fixed and tested
+5850dce correct way of checking if a formatter was set
+7afba56 code standard
+b4727af fixing issue #248 allowing the use of custom PropelFormatter with select
+49416d3 Fixed CS/trailing whitespaces
+a8145ce Extended the clear method of the generated Active Record objects so that when dealing with object/array columns, the _unserialized fields will be cleared as well.
+3ddd790 Fixed test showing a warning of undefined key offsets because numerically indexed arrays after cast to objects cannot be accessed by numeric property.
+33acfaa Added failing tests for object and array type columns, caused by object reuse via the PropelOnDemandFormatter.
+af6994e Merge pull request #276 from havvg/patch-1
+84df995 add test for class targets build
+a9d972e make class targets selectable
+e95a5d4 Merge pull request #268 from cedriclombardot/fix-count-with-select-from-select
+ae7bdfc Merge pull request #270 from cedriclombardot/fix-issue-206
+e3f5081 Fix cs
+46dffc8 Fix cs for testSubQueryCount()
+8cc0cb3 Merge pull request #269 from jaugustin/patch-1
+f23575d Fix findPkSimple() uses wrong key for InstancePool (QueryBuilder) #206
+0383d9c Provide unit test for doCount with subqueries
+bdb2e32 this fix an issue with the propelorm/propelbundle#62
+7025b10 Mark as complex queries look like SELECT * FROM (SELECT * FROM book) as b to fix bug in doCount()
+8184e26 Bumped version to 1.6.5-dev
+
 ## 2012-01-16: Version 1.6.4 ##
 
 [f8fdf43] Preparing the 1.6.4 release

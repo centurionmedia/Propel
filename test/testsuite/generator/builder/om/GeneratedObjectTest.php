@@ -9,6 +9,7 @@
  */
 
 require_once dirname(__FILE__) . '/../../../../tools/helpers/bookstore/BookstoreTestBase.php';
+require_once dirname(__FILE__) . '/../../../../../generator/lib/util/PropelQuickBuilder.php';
 
 /**
  * Tests the generated Object classes.
@@ -323,7 +324,6 @@ class GeneratedObjectTest extends BookstoreTestBase
             . " publisher_id = " . $pub2->getId()
             . " WHERE id = " . $book->getId());
 
-
         $book2 = BookPeer::retrieveByPK($book->getId());
         $this->assertSame($book, $book2, "Expected same book object instance");
 
@@ -364,8 +364,8 @@ class GeneratedObjectTest extends BookstoreTestBase
         $bookId = $book->getId();
 
         $opinion = new BookOpinion();
-        $opinion->setBookId((string)$bookId);
-        $opinion->setReaderId((string)$readerId);
+        $opinion->setBookId((string) $bookId);
+        $opinion->setReaderId((string) $readerId);
         $opinion->setRating(5);
         $opinion->setRecommendToFriend(false);
         $opinion->save();
@@ -424,22 +424,22 @@ class GeneratedObjectTest extends BookstoreTestBase
 
     }
 
-		public function testSaveCanInsertEmptyObjects()
-		{
-			$b = new Book();
-			$b->save();
-			$this->assertFalse($b->isNew());
-			$this->assertNotNull($b->getId());
-		}
+    public function testSaveCanInsertEmptyObjects()
+    {
+        $b = new Book();
+        $b->save();
+        $this->assertFalse($b->isNew());
+        $this->assertNotNull($b->getId());
+    }
 
-		public function testSaveCanInsertNonEmptyObjects()
-		{
-			$b = new Book();
-			$b->setTitle('foo');
-			$b->save();
-			$this->assertFalse($b->isNew());
-			$this->assertNotNull($b->getId());
-		}
+    public function testSaveCanInsertNonEmptyObjects()
+    {
+        $b = new Book();
+        $b->setTitle('foo');
+        $b->save();
+        $this->assertFalse($b->isNew());
+        $this->assertNotNull($b->getId());
+    }
 
     /**
      *
@@ -665,7 +665,6 @@ class GeneratedObjectTest extends BookstoreTestBase
         $op->setRecommendToFriend(true);
         $op->save();
 
-
         $br2 = $br->copy(true);
 
         $this->assertNull($br2->getId());
@@ -750,6 +749,31 @@ class GeneratedObjectTest extends BookstoreTestBase
         );
         $this->assertEquals($expectedKeys, array_keys($arr1), 'toArray() accepts a $keyType parameter to change the result keys');
         $this->assertEquals('Don Juan', $arr1[BookPeer::TITLE], 'toArray() returns an associative array representation of the object');
+    }
+
+    public function testToArrayKeyTypePreDefined()
+    {
+        $schema = <<<EOF
+<database name="test">
+    <table name="test_key_type_table">
+        <column name="id_key_type" required="true" primaryKey="true" autoIncrement="true" type="INTEGER" />
+        <column name="name_key_type" type="VARCHAR" />
+    </table>
+</database>
+EOF;
+        $builder = new PropelQuickBuilder();
+        $builder->setSchema($schema);
+        $builder->getConfig()->setBuildProperty('defaultKeyType', 'studlyPhpName');
+        $builder->buildClasses();
+
+        $expectedKeys = array(
+            'idKeyType',
+            'nameKeyType',
+        );
+
+        $object = new TestKeyTypeTable();
+
+        $this->assertEquals($expectedKeys, array_keys($object->toArray()), 'toArray() returns an associative array with pre-defined key type in properties.');
     }
 
     /**
@@ -1059,242 +1083,418 @@ EOF;
         $this->assertFalse(method_exists($cv, $method), 'readOnly tables end up with no ' . $method . ' method in the generated object class');
     }
 
-	public function testSetterOneToMany()
-	{
-		// Ensure no data
-		BookQuery::create()->deleteAll();
-		AuthorQuery::create()->deleteAll();
+    public function testSetterOneToMany()
+    {
+        // Ensure no data
+        BookQuery::create()->deleteAll();
+        AuthorQuery::create()->deleteAll();
 
-		$coll = new PropelObjectCollection();
-		$coll->setModel('Book');
+        $coll = new PropelObjectCollection();
+        $coll->setModel('Book');
 
-		for ($i = 0; $i < 3; $i++) {
-			$coll[] = new Book();
-		}
+        for ($i = 0; $i < 3; $i++) {
+            $coll[] = new Book();
+        }
 
-		$this->assertEquals(3, $coll->count());
+        $this->assertEquals(3, $coll->count());
 
-		$a = new Author();
-		$a->setBooks($coll);
-		$a->save();
+        $a = new Author();
+        $a->setBooks($coll);
+        $a->save();
 
-		$this->assertInstanceOf('PropelObjectCollection', $a->getBooks());
-		$this->assertEquals(3, $a->getBooks()->count());
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(3, BookQuery::create()->count());
+        $this->assertInstanceOf('PropelObjectCollection', $a->getBooks());
+        $this->assertEquals(3, $a->getBooks()->count());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(3, BookQuery::create()->count());
 
-		$coll->shift();
-		$this->assertEquals(2, $coll->count());
+        $coll->shift();
+        $this->assertEquals(2, $coll->count());
 
-		$a->setBooks($coll);
-		$a->save();
+        $a->setBooks($coll);
+        $a->save();
 
-		$this->assertEquals(2, $a->getBooks()->count());
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(2, BookQuery::create()->count());
+        $this->assertEquals(2, $a->getBooks()->count());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        //The book is not deleted because his fk is not required
+        $this->assertEquals(3, BookQuery::create()->count());
 
-		$newBook = new Book();
-		$newBook->setTitle('My New Book');
-		$newBook->setIsbn(1234);
+        $newBook = new Book();
+        $newBook->setTitle('My New Book');
+        $newBook->setIsbn(1234);
 
-		// Kind of new collection
-		$coll = clone $coll;
-		$coll[] = $newBook;
+        // Kind of new collection
+        $coll = clone $coll;
+        $coll[] = $newBook;
 
-		$a->setBooks($coll);
-		$a->save();
+        $a->setBooks($coll);
+        $a->save();
 
-		$this->assertEquals(3, $coll->count());
-		$this->assertEquals(3, $a->getBooks()->count());
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(3, BookQuery::create()->count());
+        $this->assertEquals(3, $coll->count());
+        $this->assertEquals(3, $a->getBooks()->count());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(4, BookQuery::create()->count());
 
-		// Add a new object
-		$newBook1 = new Book();
-		$newBook1->setTitle('My New Book1');
-		$newBook1->setIsbn(1256);
+        // Add a new object
+        $newBook1 = new Book();
+        $newBook1->setTitle('My New Book1');
+        $newBook1->setIsbn(1256);
 
-		// Existing collection - The fix around reference is tested here.
-		$coll[] = $newBook1;
+        // Existing collection - The fix around reference is tested here.
+        $coll[] = $newBook1;
 
-		$a->setBooks($coll);
-		$a->save();
+        $a->setBooks($coll);
+        $a->save();
 
-		$this->assertEquals(4, $coll->count());
-		$this->assertEquals(4, $a->getBooks()->count());
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(4, BookQuery::create()->count());
+        $this->assertEquals(4, $coll->count());
+        $this->assertEquals(4, $a->getBooks()->count());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(5, BookQuery::create()->count());
 
-		// Add the same collection
-		$books = $a->getBooks();
+        // Add the same collection
+        $books = $a->getBooks();
 
-		$a->setBooks($books);
-		$a->save();
+        $a->setBooks($books);
+        $a->save();
 
-		$this->assertEquals(4, $books->count());
-		$this->assertEquals(4, $a->getBooks()->count());
-		$this->assertEquals(1,  AuthorQuery::create()->count());
-		$this->assertEquals(4, BookQuery::create()->count());
-	}
+        $this->assertEquals(4, $books->count());
+        $this->assertEquals(4, $a->getBooks()->count());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(5, BookQuery::create()->count());
+    }
 
-	public function testSetterOneToManyWithNoData()
-	{
-		// Ensure no data
-		BookQuery::create()->deleteAll();
-		AuthorQuery::create()->deleteAll();
+    public function testSetterOneToManyWithFkRequired()
+    {
+        // Ensure no data
+        BookSummaryQuery::create()->deleteAll();
+        BookQuery::create()->deleteAll();
 
-		$books = new PropelObjectCollection();
-		$this->assertEquals(0, $books->count());
+        $coll = new PropelObjectCollection();
+        $coll->setModel('BookSummary');
 
-		// Basic usage
-		$a = new Author();
-		$a->setBooks($books);
-		$a->save();
+        for ($i = 0; $i < 3; $i++) {
+            $coll[] = new BookSummary();
+        }
 
-		$this->assertEquals(0, $a->getBooks()->count());
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(0, BookQuery::create()->count());
-	}
+        $this->assertEquals(3, $coll->count());
 
-	public function testSetterOneToManySavesForeignObjects()
-	{
-		// Ensure no data
-		BookQuery::create()->deleteAll();
-		AuthorQuery::create()->deleteAll();
+        $b = new Book();
+        $b->setTitle('myBook');
+        $b->setBookSummarys($coll);
+        $b->save();
 
-		$book = new Book();
-		$book->setTitle('My Book');
-		$book->save();
+        $this->assertInstanceOf('PropelObjectCollection', $b->getBookSummarys());
+        $this->assertEquals(3, $b->getBookSummarys()->count());
+        $this->assertEquals(1, BookQuery::create()->count());
+        $this->assertEquals(3, BookSummaryQuery::create()->count());
 
-		// Modify it but don't save it
-		$book->setTitle('My Title');
+        $coll->shift();
+        $this->assertEquals(2, $coll->count());
 
-		$coll = new PropelObjectCollection();
-		$coll[] = $book;
+        $b->setBookSummarys($coll);
+        $b->save();
 
-		BookPeer::clearInstancePool();
-		$book = BookQuery::create()->findPk($book->getPrimaryKey());
+        $this->assertEquals(2, $b->getBookSummarys()->count());
+        $this->assertEquals(1, BookQuery::create()->count());
+        $this->assertEquals(2, BookSummaryQuery::create()->count());
 
-		$a = new Author();
-		$a->setBooks($coll);
-		$a->save();
+        $newBookSammary = new BookSummary();
+        $newBookSammary->setSummary('My sammary');
 
-		$this->assertEquals(1, $a->getBooks()->count());
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(1, BookQuery::create()->count());
+        // Kind of new collection
+        $coll = clone $coll;
+        $coll[] = $newBookSammary;
 
-		$result = BookQuery::create()
-			->filterById($book->getId())
-			->select('Title')
-			->findOne();
-		$this->assertSame('My Title', $result);
-	}
+        $b->setBookSummarys($coll);
+        $b->save();
 
-	public function testSetterOneToManyWithNewObjects()
-	{
-		// Ensure no data
-		BookQuery::create()->deleteAll();
-		AuthorQuery::create()->deleteAll();
+        $this->assertEquals(3, $coll->count());
+        $this->assertEquals(3, $b->getBookSummarys()->count());
+        $this->assertEquals(1, BookQuery::create()->count());
+        $this->assertEquals(3, BookSummaryQuery::create()->count());
 
-		$coll = new PropelObjectCollection();
-		$coll->setModel('Book');
+        // Add a new object
+        $newBookSammary1 = new BookSummary();
+        $newBookSammary1->setSummary('My sammary 1');
 
-		$coll[] = new Book();
-		$coll[] = new Book();
-		$coll[] = new Book();
+        // Existing collection - The fix around reference is tested here.
+        $coll[] = $newBookSammary1;
 
-		$a = new Author();
-		$a->setBooks($coll);
-		$a->save();
+        $b->setBookSummarys($coll);
+        $b->save();
 
-		$this->assertEquals(3, $coll->count());
-		$this->assertEquals(3, count($a->getBooks()));
-		$this->assertSame($coll, $a->getBooks());
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(3, BookQuery::create()->count());
-	}
+        $this->assertEquals(4, $coll->count());
+        $this->assertEquals(4, $b->getBookSummarys()->count());
+        $this->assertEquals(1, BookQuery::create()->count());
+        $this->assertEquals(4, BookSummaryQuery::create()->count());
 
-	public function testSetterOneToManyWithExistingObjects()
-	{
-		// Ensure no data
-		BookQuery::create()->deleteAll();
-		AuthorQuery::create()->deleteAll();
+        // Add the same collection
+        $bookSummaries = $b->getBookSummarys();
 
-		for ($i = 0; $i < 3; $i++) {
-			$b = new Book();
-			$b->setTitle('Book ' . $i);
-			$b->save();
-		}
+        $b->setBookSummarys($bookSummaries);
+        $b->save();
 
-		BookPeer::clearInstancePool();
-		$books = BookQuery::create()->find();
+        $this->assertEquals(4, $coll->count());
+        $this->assertEquals(4, $b->getBookSummarys()->count());
+        $this->assertEquals(1, BookQuery::create()->count());
+        $this->assertEquals(4, BookSummaryQuery::create()->count());
+    }
 
-		$a = new Author();
-		$a->setBooks($books);
-		$a->save();
+    public function testSetterOneToManyWithNoData()
+    {
+        // Ensure no data
+        BookQuery::create()->deleteAll();
+        AuthorQuery::create()->deleteAll();
 
-		$this->assertEquals(3, count($a->getBooks()));
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(3, BookQuery::create()->count());
+        $books = new PropelObjectCollection();
+        $this->assertEquals(0, $books->count());
 
-		$i = 0;
-		foreach ($a->getBooks() as $book) {
-			$this->assertEquals('Book ' . $i++, $book->getTitle());
-		}
-	}
+        // Basic usage
+        $a = new Author();
+        $a->setBooks($books);
+        $a->save();
 
-	public function testSetterOneToManyWithEmptyCollection()
-	{
-		// Ensure no data
-		BookQuery::create()->deleteAll();
-		AuthorQuery::create()->deleteAll();
+        $this->assertEquals(0, $a->getBooks()->count());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(0, BookQuery::create()->count());
+    }
 
-		$a = new Author();
-		$a->setBooks(new PropelObjectCollection());
-		$a->save();
+    public function testSetterOneToManySavesForeignObjects()
+    {
+        // Ensure no data
+        BookQuery::create()->deleteAll();
+        AuthorQuery::create()->deleteAll();
 
-		$this->assertEquals(0, count($a->getBooks()));
+        $book = new Book();
+        $book->setTitle('My Book');
+        $book->save();
 
-		$this->assertEquals(0, BookQuery::create()->count());
-		$this->assertEquals(1, AuthorQuery::create()->count());
-	}
+        // Modify it but don't save it
+        $book->setTitle('My Title');
 
-	public function testSetterOneToManyReplacesOldObjectsByNewObjects()
-	{
-		// Ensure no data
-		BookQuery::create()->deleteAll();
-		AuthorQuery::create()->deleteAll();
+        $coll = new PropelObjectCollection();
+        $coll[] = $book;
 
-		$books = new PropelObjectCollection();
-		foreach (array('foo', 'bar') as $title) {
-			$b = new Book();
-			$b->setTitle($title);
-			$books[] = $b;
-		}
+        BookPeer::clearInstancePool();
+        $book = BookQuery::create()->findPk($book->getPrimaryKey());
 
-		$a = new Author();
-		$a->setBooks($books);
-		$a->save();
+        $a = new Author();
+        $a->setBooks($coll);
+        $a->save();
 
-		$books = $a->getBooks();
-		$this->assertEquals('foo', $books[0]->getTitle());
-		$this->assertEquals('bar', $books[1]->getTitle());
+        $this->assertEquals(1, $a->getBooks()->count());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(1, BookQuery::create()->count());
 
-		$books = new PropelObjectCollection();
-		foreach (array('bam', 'bom') as $title) {
-			$b = new Book();
-			$b->setTitle($title);
-			$books[] = $b;
-		}
+        $result = BookQuery::create()
+            ->filterById($book->getId())
+            ->select('Title')
+            ->findOne();
+        $this->assertSame('My Title', $result);
+    }
 
-		$a->setBooks($books);
-		$a->save();
+    public function testSetterOneToManyWithNewObjects()
+    {
+        // Ensure no data
+        BookQuery::create()->deleteAll();
+        AuthorQuery::create()->deleteAll();
 
-		$books = $a->getBooks();
-		$this->assertEquals('bam', $books[0]->getTitle());
-		$this->assertEquals('bom', $books[1]->getTitle());
+        $coll = new PropelObjectCollection();
+        $coll->setModel('Book');
 
-		$this->assertEquals(1, AuthorQuery::create()->count());
-		$this->assertEquals(2, BookQuery::create()->count());
-	}
+        $coll[] = new Book();
+        $coll[] = new Book();
+        $coll[] = new Book();
+
+        $a = new Author();
+        $a->setBooks($coll);
+        $a->save();
+
+        $this->assertEquals(3, $coll->count());
+        $this->assertEquals(3, count($a->getBooks()));
+        $this->assertSame($coll, $a->getBooks());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(3, BookQuery::create()->count());
+    }
+
+    public function testSetterOneToManyWithExistingObjects()
+    {
+        // Ensure no data
+        BookQuery::create()->deleteAll();
+        AuthorQuery::create()->deleteAll();
+
+        for ($i = 0; $i < 3; $i++) {
+            $b = new Book();
+            $b->setTitle('Book ' . $i);
+            $b->save();
+        }
+
+        BookPeer::clearInstancePool();
+        $books = BookQuery::create()->find();
+
+        $a = new Author();
+        $a->setBooks($books);
+        $a->save();
+
+        $this->assertEquals(3, count($a->getBooks()));
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(3, BookQuery::create()->count());
+
+        $i = 0;
+        foreach ($a->getBooks() as $book) {
+            $this->assertEquals('Book ' . $i++, $book->getTitle());
+        }
+    }
+
+    public function testSetterOneToManyWithEmptyCollection()
+    {
+        // Ensure no data
+        BookQuery::create()->deleteAll();
+        AuthorQuery::create()->deleteAll();
+
+        $a = new Author();
+        $a->setBooks(new PropelObjectCollection());
+        $a->save();
+
+        $this->assertEquals(0, count($a->getBooks()));
+
+        $this->assertEquals(0, BookQuery::create()->count());
+        $this->assertEquals(1, AuthorQuery::create()->count());
+    }
+
+    public function testSetterOneToManyReplacesOldObjectsByNewObjects()
+    {
+        // Ensure no data
+        BookQuery::create()->deleteAll();
+        AuthorQuery::create()->deleteAll();
+
+        $books = new PropelObjectCollection();
+        foreach (array('foo', 'bar') as $title) {
+            $b = new Book();
+            $b->setTitle($title);
+            $books[] = $b;
+        }
+
+        $a = new Author();
+        $a->setBooks($books);
+        $a->save();
+
+        $books = $a->getBooks();
+        $this->assertEquals('foo', $books[0]->getTitle());
+        $this->assertEquals('bar', $books[1]->getTitle());
+
+        $books = new PropelObjectCollection();
+        foreach (array('bam', 'bom') as $title) {
+            $b = new Book();
+            $b->setTitle($title);
+            $books[] = $b;
+        }
+
+        $a->setBooks($books);
+        $a->save();
+
+        $books = $a->getBooks();
+        $this->assertEquals('bam', $books[0]->getTitle());
+        $this->assertEquals('bom', $books[1]->getTitle());
+
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        // the replaced book are still there because the PK is not required
+        $this->assertEquals(4, BookQuery::create()->count());
+    }
+
+    public function testSetterOneToManyReplacesOldObjectsByNewObjectsWithFkRequired()
+    {
+        // Ensure no data
+        BookSummaryQuery::create()->deleteAll();
+        BookQuery::create()->deleteAll();
+
+        $bookSummaries = new PropelObjectCollection();
+        foreach (array('foo', 'bar') as $summary) {
+            $s = new BookSummary();
+            $s->setSummary($summary);
+            $bookSummaries[] = $s;
+        }
+
+        $b = new Book();
+        $b->setTitle('Hello');
+        $b->setBookSummarys($bookSummaries);
+        $b->save();
+
+        $bookSummaries = $b->getBookSummarys();
+        $this->assertEquals('foo', $bookSummaries[0]->getSummary());
+        $this->assertEquals('bar', $bookSummaries[1]->getSummary());
+
+        $bookSummaries = new PropelObjectCollection();
+        foreach (array('bam', 'bom') as $summary) {
+            $s = new BookSummary();
+            $s->setSummary($summary);
+            $bookSummaries[] = $s;
+        }
+
+        $b->setBookSummarys($bookSummaries);
+        $b->save();
+
+        $bookSummaries = $b->getBookSummarys();
+        $this->assertEquals('bam', $bookSummaries[0]->getSummary());
+        $this->assertEquals('bom', $bookSummaries[1]->getSummary());
+
+        $this->assertEquals(1, BookQuery::create()->count());
+        $this->assertEquals(2, BookSummaryQuery::create()->count());
+    }
+
+    public function testHooksCall()
+    {
+        AuthorQuery::create()->deleteAll();
+        BookQuery::create()->deleteAll();
+
+        $author = new CountableAuthor();
+        $book   = new Book();
+
+        $author->addBook($book);
+        $author->save();
+
+        $this->assertEquals(1, AuthorQuery::create()->count());
+        $this->assertEquals(1, BookQuery::create()->count());
+        $this->assertEquals(1, $author->nbCallPreSave);
+    }
+
+    /**
+     * @expectedException PropelException
+     */
+    public function testDoInsert()
+    {
+        if (!class_exists('Unexistent')) {
+            $schema = <<<EOF
+<database name="a-database">
+    <table name="unexistent">
+        <column name="id" required="true" primaryKey="true" autoIncrement="true" type="INTEGER" />
+        <column name="name" type="VARCHAR" />
+    </table>
+</database>
+EOF;
+            $builder = new PropelQuickBuilder();
+            $builder->setSchema($schema);
+            $builder->buildClasses();
+        }
+
+        $object = new Unexistent();
+        $object->setName('Foo');
+        $object->save();
+
+        $this->fail('Should not be called');
+    }
+}
+
+class CountableAuthor extends Author
+{
+    public $nbCallPreSave = 0;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function preSave(PropelPDO $con = null)
+    {
+        $this->nbCallPreSave++;
+
+        return parent::preSave($con);
+    }
 }
