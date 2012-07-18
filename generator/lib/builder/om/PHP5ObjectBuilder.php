@@ -222,6 +222,8 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
             } else {
                 $this->declareClassFromBuilder($this->getInterfaceBuilder());
             }
+        } elseif ($interface = ClassTools::getInterface($table)) {
+            $script .= "implements " . ClassTools::classname($interface);
         }
 
         $script .= "
@@ -312,6 +314,8 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
         $this->addClearAllReferences($script);
 
         $this->addPrimaryString($script);
+
+        $this->addIsAlreadyInSave($script);
 
         // apply behaviors
         $this->applyBehaviorModifier('objectMethods', $script, "	");
@@ -3428,6 +3432,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
      * @var        PropelObjectCollection|{$className}[] Collection to store aggregation of $className objects.
      */
     protected $".$this->getRefFKCollVarName($refFK).";
+    protected $".$this->getRefFKCollVarName($refFK)."Partial;
 ";
         }
     }
@@ -3450,6 +3455,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
                 $this->addPKRefFKSet($script, $refFK);
             } else {
                 $this->addRefFKClear($script, $refFK);
+                $this->addRefFKPartial($script, $refFK);
                 $this->addRefFKInit($script, $refFK);
                 $this->addRefFKGet($script, $refFK);
                 $this->addRefFKSet($script, $refFK);
@@ -3513,9 +3519,33 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
     public function clear$relCol()
     {
         \$this->$collName = null; // important to set this to NULL since that means it is uninitialized
+        \$this->{$collName}Partial = null;
     }
 ";
     } // addRefererClear()
+
+    /**
+     * Adds the method that clears the referrer fkey collection.
+     * @param      string &$script The script will be modified in this method.
+     */
+    protected function addRefFKPartial(&$script, ForeignKey $refFK)
+    {
+        $relCol = $this->getRefFKPhpNameAffix($refFK, $plural = true);
+        $collName = $this->getRefFKCollVarName($refFK);
+
+        $script .= "
+    /**
+     * reset is the $collName collection loaded partially
+     *
+     * @return void
+     */
+    public function resetPartial{$relCol}(\$v = true)
+    {
+        \$this->{$collName}Partial = \$v;
+    }
+";
+    } // addRefFKPartial()
+
 
     /**
      * Adds the method that initializes the referrer fkey collection.
@@ -3581,6 +3611,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
     {
         if (\$this->$collName === null) {
             \$this->init".$this->getRefFKPhpNameAffix($refFK, $plural = true)."();
+            \$this->{$collName}Partial = true;
         }
         if (!\$this->{$collName}->contains(\$l)) { // only add it if the **same** object is not already associated
             \$this->doAdd" . $this->getRefFKPhpNameAffix($refFK, $plural = false)  . "(\$l);
@@ -3621,10 +3652,14 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
      */
     public function count$relCol(Criteria \$criteria = null, \$distinct = false, PropelPDO \$con = null)
     {
-        if (null === \$this->$collName || null !== \$criteria) {
+        \$partial = \$this->{$collName}Partial && !\$this->isNew();
+        if (null === \$this->$collName || null !== \$criteria || \$partial) {
             if (\$this->isNew() && null === \$this->$collName) {
                 return 0;
             } else {
+                if(\$partial && !\$criteria) {
+                    return count(\$this->get$relCol());
+                }
                 \$query = $fkQueryClassname::create(null, \$criteria);
                 if (\$distinct) {
                     \$query->distinct();
@@ -3676,7 +3711,8 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
      */
     public function get$relCol(\$criteria = null, PropelPDO \$con = null)
     {
-        if (null === \$this->$collName || null !== \$criteria) {
+        \$partial = \$this->{$collName}Partial && !\$this->isNew();
+        if (null === \$this->$collName || null !== \$criteria  || \$partial) {
             if (\$this->isNew() && null === \$this->$collName) {
                 // return empty collection
                 \$this->init".$this->getRefFKPhpNameAffix($refFK, $plural = true)."();
@@ -3685,9 +3721,31 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
                     ->filterBy" . $this->getFKPhpNameAffix($refFK) . "(\$this)
                     ->find(\$con);
                 if (null !== \$criteria) {
+                    if (false !== \$this->{$collName}Partial && count(\$$collName)) {
+                      \$this->init".$this->getRefFKPhpNameAffix($refFK, $plural = true)."(false);
+
+                      foreach(\$$collName as \$obj) {
+                        if (false == \$this->{$collName}->contains(\$obj)) {
+                          \$this->{$collName}->append(\$obj);
+                        }
+                      }
+
+                      \$this->{$collName}Partial = true;
+                    }
+
                     return \$$collName;
                 }
+
+                if(\$partial && \$this->$collName) {
+                    foreach(\$this->$collName as \$obj) {
+                        if(\$obj->isNew()) {
+                            \${$collName}[] = \$obj;
+                        }
+                    }
+                }
+
                 \$this->$collName = \$$collName;
+                \$this->{$collName}Partial = false;
             }
         }
 
@@ -3736,6 +3794,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
         }
 
         \$this->{$collName} = \${$inputCollection};
+        \$this->{$collName}Partial = false;
     }
 ";
     }
@@ -4035,6 +4094,7 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
     public function clear$relCol()
     {
         \$this->$collName = null; // important to set this to NULL since that means it is uninitialized
+        \$this->{$collName}Partial = null;
     }
 ";
     } // addRefererClear()
@@ -5471,5 +5531,20 @@ abstract class ".$this->getClassname()." extends ".$parentClass." ";
     }
 ";
         }
+    }
+
+    protected function addIsAlreadyInSave(&$script)
+    {
+        $script .= "
+    /**
+     * return true is the object is in saving state
+     *
+     * @return boolean
+     */
+    public function isAlreadyInSave()
+    {
+        return \$this->alreadyInSave;
+    }
+";
     }
 } // PHP5ObjectBuilder
